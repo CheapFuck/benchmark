@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Benchmark Leaderboard</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+    background: #0d1117;
+    color: #c9d1d9;
+    min-height: 100vh;
+    padding: 2rem 1rem;
+  }
+  .container { max-width: 960px; margin: 0 auto; }
+  h1 {
+    text-align: center;
+    font-size: 2rem;
+    margin-bottom: 0.25rem;
+    color: #f0f6fc;
+  }
+  .subtitle {
+    text-align: center;
+    color: #8b949e;
+    margin-bottom: 2rem;
+    font-size: 0.95rem;
+  }
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    background: #161b22;
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.4);
+  }
+  th, td { padding: 0.75rem 1rem; text-align: right; white-space: nowrap; }
+  th {
+    background: #21262d;
+    color: #8b949e;
+    font-weight: 600;
+    font-size: 0.8rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    cursor: pointer;
+    user-select: none;
+  }
+  th:hover { color: #f0f6fc; }
+  th.sorted-asc::after  { content: ' ▲'; }
+  th.sorted-desc::after { content: ' ▼'; }
+  td:first-child, th:first-child { text-align: center; width: 3rem; }
+  td:nth-child(2), th:nth-child(2) { text-align: left; }
+  td:nth-child(3), th:nth-child(3) { text-align: left; }
+  tr:nth-child(even) { background: #1a1f27; }
+  tr:hover { background: #1f2937; }
+  .rank-1 { color: #f5c542; font-weight: 700; }
+  .rank-2 { color: #adb5bd; font-weight: 700; }
+  .rank-3 { color: #cd7f32; font-weight: 700; }
+  .score-overall { color: #58a6ff; font-weight: 700; font-size: 1.05rem; }
+  .loading {
+    text-align: center;
+    padding: 3rem;
+    color: #8b949e;
+    font-size: 1.1rem;
+  }
+  .error { text-align: center; padding: 3rem; color: #f85149; }
+  .stats {
+    display: flex;
+    gap: 1.5rem;
+    justify-content: center;
+    margin-bottom: 1.5rem;
+    flex-wrap: wrap;
+  }
+  .stat-card {
+    background: #161b22;
+    border-radius: 8px;
+    padding: 1rem 1.5rem;
+    text-align: center;
+    min-width: 140px;
+  }
+  .stat-card .value { font-size: 1.5rem; font-weight: 700; color: #58a6ff; }
+  .stat-card .label { font-size: 0.8rem; color: #8b949e; margin-top: 0.25rem; }
+</style>
+</head>
+<body>
+<div class="container">
+  <h1>Benchmark Leaderboard</h1>
+  <p class="subtitle">Community benchmark results &mdash; higher is better (1000 = baseline)</p>
+
+  <div class="stats" id="stats"></div>
+
+  <div id="content"><div class="loading">Loading results&hellip;</div></div>
+</div>
+
+<script>
+const SUPABASE_URL = 'https://unesonqawvpgigjudvnm.supabase.co';
+const SUPABASE_KEY = 'sb_publishable_obUFweX2kWRDofOLvV7jYg_j376QTL9';
+
+let allRows = [];
+let sortCol = 'score_overall';
+let sortDir = 'desc';
+
+async function fetchResults() {
+  const res = await fetch(
+    `${SUPABASE_URL}/rest/v1/results?select=*&order=score_overall.desc`,
+    { headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${SUPABASE_KEY}` } }
+  );
+  if (!res.ok) throw new Error(`HTTP ${res.status}`);
+  return res.json();
+}
+
+function renderStats(rows) {
+  const el = document.getElementById('stats');
+  if (!rows.length) { el.innerHTML = ''; return; }
+  const best = Math.max(...rows.map(r => r.score_overall || 0));
+  const avg  = rows.reduce((s, r) => s + (r.score_overall || 0), 0) / rows.length;
+  const cpus = new Set(rows.map(r => r.cpu_name)).size;
+  el.innerHTML = `
+    <div class="stat-card"><div class="value">${rows.length}</div><div class="label">Submissions</div></div>
+    <div class="stat-card"><div class="value">${cpus}</div><div class="label">Unique CPUs</div></div>
+    <div class="stat-card"><div class="value">${Math.round(best)}</div><div class="label">Top Score</div></div>
+    <div class="stat-card"><div class="value">${Math.round(avg)}</div><div class="label">Average</div></div>
+  `;
+}
+
+function renderTable(rows) {
+  if (!rows.length) {
+    document.getElementById('content').innerHTML = '<div class="loading">No results yet. Run the benchmark and submit!</div>';
+    return;
+  }
+
+  const cols = [
+    { key: '#',              label: '#',          fmt: null },
+    { key: 'cpu_name',       label: 'CPU',        fmt: v => v },
+    { key: 'os',             label: 'OS',         fmt: v => v },
+    { key: 'cores',          label: 'Cores',      fmt: v => v },
+    { key: 'score_int',      label: 'Integer',    fmt: v => Math.round(v) },
+    { key: 'score_float_st', label: 'Float ST',   fmt: v => Math.round(v) },
+    { key: 'score_float_mt', label: 'Float MT',   fmt: v => Math.round(v) },
+    { key: 'score_mem',      label: 'Memory',     fmt: v => Math.round(v) },
+    { key: 'score_overall',  label: 'Overall',    fmt: v => Math.round(v) },
+  ];
+
+  let html = '<table><thead><tr>';
+  for (const c of cols) {
+    const cls = c.key === sortCol ? `sorted-${sortDir}` : '';
+    const click = c.key !== '#' ? `onclick="sortBy('${c.key}')"` : '';
+    html += `<th class="${cls}" ${click}>${c.label}</th>`;
+  }
+  html += '</tr></thead><tbody>';
+
+  rows.forEach((r, i) => {
+    const rank = i + 1;
+    const rankCls = rank <= 3 ? `rank-${rank}` : '';
+    html += '<tr>';
+    html += `<td class="${rankCls}">${rank}</td>`;
+    html += `<td>${esc(r.cpu_name)}</td>`;
+    html += `<td>${esc(r.os)}</td>`;
+    html += `<td>${r.cores}</td>`;
+    html += `<td>${Math.round(r.score_int || 0)}</td>`;
+    html += `<td>${Math.round(r.score_float_st || 0)}</td>`;
+    html += `<td>${Math.round(r.score_float_mt || 0)}</td>`;
+    html += `<td>${Math.round(r.score_mem || 0)}</td>`;
+    html += `<td class="score-overall">${Math.round(r.score_overall || 0)}</td>`;
+    html += '</tr>';
+  });
+
+  html += '</tbody></table>';
+  document.getElementById('content').innerHTML = html;
+}
+
+function esc(s) {
+  const d = document.createElement('div');
+  d.textContent = s || '';
+  return d.innerHTML;
+}
+
+function sortBy(col) {
+  if (sortCol === col) {
+    sortDir = sortDir === 'desc' ? 'asc' : 'desc';
+  } else {
+    sortCol = col;
+    sortDir = (col === 'cpu_name' || col === 'os') ? 'asc' : 'desc';
+  }
+  allRows.sort((a, b) => {
+    let va = a[col], vb = b[col];
+    if (typeof va === 'string') va = va.toLowerCase();
+    if (typeof vb === 'string') vb = vb.toLowerCase();
+    if (va < vb) return sortDir === 'asc' ? -1 : 1;
+    if (va > vb) return sortDir === 'asc' ? 1 : -1;
+    return 0;
+  });
+  renderTable(allRows);
+}
+
+(async () => {
+  try {
+    allRows = await fetchResults();
+    renderStats(allRows);
+    renderTable(allRows);
+  } catch (e) {
+    document.getElementById('content').innerHTML = `<div class="error">Failed to load: ${esc(e.message)}</div>`;
+  }
+})();
+</script>
+</body>
+</html>
