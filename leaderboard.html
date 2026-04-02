@@ -107,18 +107,6 @@ async function fetchResults() {
   return res.json();
 }
 
-function renderStats(rows) {
-  const el = document.getElementById('stats');
-  if (!rows.length) { el.innerHTML = ''; return; }
-  const best = Math.max(...rows.map(r => r.score_overall || 0));
-  const avg  = rows.reduce((s, r) => s + (r.score_overall || 0), 0) / rows.length;
-  el.innerHTML = `
-    <div class="stat-card"><div class="value">${rows.length}</div><div class="label">Submissions</div></div>
-    <div class="stat-card"><div class="value">${Math.round(best)}</div><div class="label">Top Score</div></div>
-    <div class="stat-card"><div class="value">${Math.round(avg)}</div><div class="label">Average</div></div>
-  `;
-}
-
 function renderTable(rows) {
   if (!rows.length) {
     document.getElementById('content').innerHTML = '<div class="loading">No results yet. Run the benchmark and submit!</div>';
@@ -194,7 +182,6 @@ function sortBy(col) {
 (async () => {
   try {
     allRows = await fetchResults();
-    renderStats(allRows);
     renderTable(allRows);
   } catch (e) {
     document.getElementById('content').innerHTML = `<div class="error">Failed to load: ${esc(e.message)}</div>`;
