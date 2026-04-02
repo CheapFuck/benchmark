@@ -1,9 +1,5 @@
 /*
  * System Benchmark Tool
- * Compile:
- *   Windows (MSVC):  cl benchmark.c /O2 /openmp
- *   Windows (GCC):   gcc benchmark.c -O2 -fopenmp -lm -o benchmark
- *   Linux:           gcc benchmark.c -O2 -fopenmp -lm -o benchmark
  *
  * Run: ./benchmark  (or benchmark.exe on Windows)
  */
