@@ -114,10 +114,8 @@ function renderStats(rows) {
   if (!rows.length) { el.innerHTML = ''; return; }
   const best = Math.max(...rows.map(r => r.score_overall || 0));
   const avg  = rows.reduce((s, r) => s + (r.score_overall || 0), 0) / rows.length;
-  const cpus = new Set(rows.map(r => r.cpu_name)).size;
   el.innerHTML = `
     <div class="stat-card"><div class="value">${rows.length}</div><div class="label">Submissions</div></div>
-    <div class="stat-card"><div class="value">${cpus}</div><div class="label">Unique CPUs</div></div>
     <div class="stat-card"><div class="value">${Math.round(best)}</div><div class="label">Top Score</div></div>
     <div class="stat-card"><div class="value">${Math.round(avg)}</div><div class="label">Average</div></div>
   `;
@@ -131,7 +129,8 @@ function renderTable(rows) {
 
   const cols = [
     { key: '#',              label: '#',          fmt: null },
-    { key: 'cpu_name',       label: 'CPU',        fmt: v => v },
+    { key: 'computername',   label: 'Computer',   fmt: v => v },
+    { key: 'cpu_name',        label: 'CPU',        fmt: v => v },
     { key: 'os',             label: 'OS',         fmt: v => v },
     { key: 'cores',          label: 'Cores',      fmt: v => v },
     { key: 'score_int',      label: 'Integer',    fmt: v => Math.round(v) },
@@ -154,6 +153,7 @@ function renderTable(rows) {
     const rankCls = rank <= 3 ? `rank-${rank}` : '';
     html += '<tr>';
     html += `<td class="${rankCls}">${rank}</td>`;
+    html += `<td>${esc(r.computername)}</td>`;
     html += `<td>${esc(r.cpu_name)}</td>`;
     html += `<td>${esc(r.os)}</td>`;
     html += `<td>${r.cores}</td>`;
