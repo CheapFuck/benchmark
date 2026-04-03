@@ -341,7 +341,7 @@ static void submit_results(const char *cpu_name, const char *computername,
         if (fgets(status, sizeof(status), p))
             trim(status);
         PCLOSE(p);
-        if (strncmp(status, "201", 3) == 0) {
+        if (strncmp(status, "20", 2) == 0) {
             printf("  Submitted successfully!\n");
         } else {
             printf("  Submission failed (HTTP %s).\n", status);
