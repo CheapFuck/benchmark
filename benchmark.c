@@ -365,6 +365,7 @@ int main(void) {
 #else
     gethostname(computername, sizeof(computername));
 #endif
+    { char *dot = strchr(computername, '.'); if (dot) *dot = '\0'; }
 
     /* Only reveal name for school machines (pattern: fXrYsZ) */
     {
