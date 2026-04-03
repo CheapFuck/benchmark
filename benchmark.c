@@ -285,7 +285,7 @@ static double score(double ref, double actual) {
 static void submit_results(const char *cpu_name, const char *computername,
                            int cores, double s_int, double s_fst,
                            double s_fmt, double s_mem, double overall) {
-    const char *url = "https://unesonqawvpgigjudvnm.supabase.co/rest/v1/results";
+    const char *url = "https://unesonqawvpgigjudvnm.supabase.co/rest/v1/results?on_conflict=computername";
     const char *apikey = "sb_publishable_obUFweX2kWRDofOLvV7jYg_j376QTL9";
 
 #ifdef _WIN32
