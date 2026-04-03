@@ -330,7 +330,7 @@ static void submit_results(const char *cpu_name, const char *computername,
         "-H \"apikey: %s\" "
         "-H \"Authorization: Bearer %s\" "
         "-H \"Content-Type: application/json\" "
-        "-H \"Prefer: return=minimal\" "
+        "-H \"Prefer: return=minimal,resolution=merge-duplicates\" "
         "--data @%s",
         url, apikey, apikey, tmpf);
 
