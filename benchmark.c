@@ -354,7 +354,14 @@ static void submit_results(const char *cpu_name, const char *computername,
 }
 
 /* ── Main ──────────────────────────────────────────────────────────── */
-int main(void) {
+int main(int argc, char *argv[]) {
+    int silent = 0;
+    for (int i = 1; i < argc; i++) {
+        if (strcmp(argv[i], "-s") == 0 || strcmp(argv[i], "--silent") == 0)
+            silent = 1;
+    }
+    if (silent) { if (!freopen(DEVNULL, "w", stdout)) return 1; }
+
     int cores = 1;
     char cpu_name[256] = "Unknown";
     char computername[256] = "Unknown";
@@ -423,14 +430,18 @@ int main(void) {
     printf("\n  Higher is better. 1000 = reference baseline.\n");
     printf("  Compare this number across machines.\n\n");
 
-    /* Ask to submit */
-    printf("  Submit results to online leaderboard? [y/N] ");
-    fflush(stdout);
-    int ch = getchar();
-    if (ch == 'y' || ch == 'Y') {
+    /* Ask to submit (auto-submit in silent mode) */
+    if (silent) {
         submit_results(cpu_name, computername, cores, s_int, s_fst, s_fmt, s_mem, overall);
+    } else {
+        printf("  Submit results to online leaderboard? [y/N] ");
+        fflush(stdout);
+        int ch = getchar();
+        if (ch == 'y' || ch == 'Y') {
+            submit_results(cpu_name, computername, cores, s_int, s_fst, s_fmt, s_mem, overall);
+        }
+        printf("\n");
     }
-    printf("\n");
 
     return 0;
 }
