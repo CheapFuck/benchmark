@@ -41,6 +41,14 @@ gcc benchmark.c -O2 -lm -o benchmark
 
 The multi-threaded test will just run single-threaded.
 
+### Silent mode
+
+Run with `-s` or `--silent` to suppress all output and auto-submit results. Useful for startup scripts:
+
+```bash
+./benchmark -s
+```
+
 ## Leaderboard
 
 After the benchmark finishes you'll be asked:
