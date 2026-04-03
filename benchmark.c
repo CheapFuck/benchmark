@@ -282,9 +282,9 @@ static double score(double ref, double actual) {
 }
 
 /* ── Submit results to leaderboard ─────────────────────────────────── */
-static void submit_results(const char *cpu_name, int cores,
-                           double s_int, double s_fst, double s_fmt,
-                           double s_mem, double overall) {
+static void submit_results(const char *cpu_name, const char *computername,
+                           int cores, double s_int, double s_fst,
+                           double s_fmt, double s_mem, double overall) {
     const char *url = "https://unesonqawvpgigjudvnm.supabase.co/rest/v1/results";
     const char *apikey = "sb_publishable_obUFweX2kWRDofOLvV7jYg_j376QTL9";
 
@@ -296,12 +296,14 @@ static void submit_results(const char *cpu_name, int cores,
     const char *os_name = "Linux";
 #endif
 
-    /* Sanitise CPU name for JSON (strip quotes and backslashes) */
-    char safe_cpu[256];
-    {
-        const char *s = cpu_name;
-        char *d = safe_cpu;
-        char *end = safe_cpu + sizeof(safe_cpu) - 1;
+    /* Sanitise strings for JSON (strip quotes and backslashes) */
+    char safe_cpu[256], safe_host[256];
+    const char *srcs[] = { cpu_name, computername };
+    char *dsts[] = { safe_cpu, safe_host };
+    for (int k = 0; k < 2; k++) {
+        const char *s = srcs[k];
+        char *d = dsts[k];
+        char *end = d + 255;
         while (*s && d < end) {
             if (*s != '"' && *s != '\\') *d++ = *s;
             s++;
@@ -314,11 +316,11 @@ static void submit_results(const char *cpu_name, int cores,
     FILE *f = fopen(tmpf, "w");
     if (!f) { printf("  Could not create temp file.\n"); return; }
     fprintf(f,
-        "{\"cpu_name\":\"%s\",\"cores\":%d,\"os\":\"%s\","
+        "{\"cpu_name\":\"%s\",\"computername\":\"%s\",\"cores\":%d,\"os\":\"%s\","
         "\"score_int\":%.1f,\"score_float_st\":%.1f,"
         "\"score_float_mt\":%.1f,\"score_mem\":%.1f,"
         "\"score_overall\":%.1f}",
-        safe_cpu, cores, os_name, s_int, s_fst, s_fmt, s_mem, overall);
+        safe_cpu, safe_host, cores, os_name, s_int, s_fst, s_fmt, s_mem, overall);
     fclose(f);
 
     char cmd[1024];
@@ -355,32 +357,49 @@ static void submit_results(const char *cpu_name, int cores,
 int main(void) {
     int cores = 1;
     char cpu_name[256] = "Unknown";
+    char computername[256] = "Unknown";
     print_system_info(&cores, cpu_name, sizeof(cpu_name));
+
+#ifdef _WIN32
+    { DWORD size = sizeof(computername); GetComputerNameA(computername, &size); }
+#else
+    gethostname(computername, sizeof(computername));
+#endif
+
+    /* Only reveal name for school machines (pattern: fXrYsZ) */
+    {
+        const char *h = computername;
+        int is_school = (h[0] == 'f' && h[1] >= '0' && h[1] <= '9'
+                      && h[2] == 'r' && h[3] >= '0' && h[3] <= '9'
+                      && h[4] == 's' && h[5] >= '0' && h[5] <= '9');
+        if (!is_school) strcpy(computername, "\xe2\x80\x94"); /* em dash */
+    }
+    printf("  Computer      : %s\n\n", computername);
 
     printf("  Running benchmarks … this may take a minute.\n\n");
 
-    /* 1 — Integer */
+    /* 1 - Integer */
     printf("  [1/4] Integer (prime sieve, single-thread)\n");
     double t_int = bench_integer();
     double s_int = score(REF_INTEGER, t_int);
     printf("    Time         : %.3f s\n", t_int);
     printf("    Score        : %.0f\n\n", s_int);
 
-    /* 2 — Float single-thread */
+    /* 2 - Float single-thread */
     printf("  [2/4] Floating-point (single-thread)\n");
     double t_fst = bench_float();
     double s_fst = score(REF_FLOAT_ST, t_fst);
     printf("    Time         : %.3f s\n", t_fst);
     printf("    Score        : %.0f\n\n", s_fst);
 
-    /* 3 — Float multi-thread */
+    /* 3 - Float multi-thread */
     printf("  [3/4] Floating-point (multi-thread)\n");
     double t_fmt = bench_float_mt();
     double s_fmt = score(REF_FLOAT_MT, t_fmt);
     printf("    Time         : %.3f s\n", t_fmt);
     printf("    Score        : %.0f\n\n", s_fmt);
 
-    /* 4 — Memory */
+    /* 4 - Memory */
     printf("  [4/4] Memory bandwidth (128 MB × 5 passes)\n");
     double t_mem = bench_memory();
     double s_mem = score(REF_MEMORY, t_mem);
@@ -408,7 +427,7 @@ int main(void) {
     fflush(stdout);
     int ch = getchar();
     if (ch == 'y' || ch == 'Y') {
-        submit_results(cpu_name, cores, s_int, s_fst, s_fmt, s_mem, overall);
+        submit_results(cpu_name, computername, cores, s_int, s_fst, s_fmt, s_mem, overall);
     }
     printf("\n");
 

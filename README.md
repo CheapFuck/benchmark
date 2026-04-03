@@ -7,7 +7,7 @@ A simple CPU and memory benchmark written in C. Run it, get a score, and optiona
 | Test | Weight | Description |
 |------|--------|-------------|
 | Integer | 20% | Prime sieve up to 20M (single-thread) |
-| Float ST | 25% | Heavy math — sin, cos, sqrt (single-thread) |
+| Float ST | 25% | Heavy math - sin, cos, sqrt (single-thread) |
 | Float MT | 30% | Same math workload, multi-threaded (OpenMP) |
 | Memory | 25% | Sequential read throughput (128 MB × 5 passes) |
 
@@ -27,7 +27,7 @@ make
 ### Requirements
 
 - `gcc` with OpenMP support (`sudo apt install gcc` on Ubuntu/Debian)
-- `curl` (for submitting results — comes pre-installed on most systems)
+- `curl` (for submitting results - comes pre-installed on most systems)
 - `make`
 
 ### Without OpenMP
