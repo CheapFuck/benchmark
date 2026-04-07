@@ -107,11 +107,21 @@ async function fetchResults() {
   return res.json();
 }
 
+function recalcOverall(r) {
+  return (r.score_int || 0) * 0.20
+       + (r.score_float_st || 0) * 0.25
+       + (r.score_float_mt || 0) * 0.30
+       + (r.score_mem || 0) * 0.25;
+}
+
 function renderTable(rows) {
   if (!rows.length) {
     document.getElementById('content').innerHTML = '<div class="loading">No results yet. Run the benchmark and submit!</div>';
     return;
   }
+
+  // Recalculate overall from components — never trust the stored value
+  rows.forEach(r => { r.score_overall = recalcOverall(r); });
 
   const cols = [
     { key: '#',              label: '#',          fmt: null },
@@ -182,6 +192,9 @@ function sortBy(col) {
 (async () => {
   try {
     allRows = await fetchResults();
+    // Recalculate & re-sort since DB order used untrusted score_overall
+    allRows.forEach(r => { r.score_overall = recalcOverall(r); });
+    allRows.sort((a, b) => b.score_overall - a.score_overall);
     renderTable(allRows);
   } catch (e) {
     document.getElementById('content').innerHTML = `<div class="error">Failed to load: ${esc(e.message)}</div>`;

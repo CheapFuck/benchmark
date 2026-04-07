@@ -284,7 +284,9 @@ static double score(double ref, double actual) {
 /* ── Submit results to leaderboard ─────────────────────────────────── */
 static void submit_results(const char *cpu_name, const char *computername,
                            int cores, double s_int, double s_fst,
-                           double s_fmt, double s_mem, double overall) {
+                           double s_fmt, double s_mem, double overall,
+                           double t_int, double t_fst,
+                           double t_fmt, double t_mem) {
     const char *url = "https://unesonqawvpgigjudvnm.supabase.co/rest/v1/results?on_conflict=computername";
     const char *apikey = "sb_publishable_obUFweX2kWRDofOLvV7jYg_j376QTL9";
 
@@ -319,8 +321,11 @@ static void submit_results(const char *cpu_name, const char *computername,
         "{\"cpu_name\":\"%s\",\"computername\":\"%s\",\"cores\":%d,\"os\":\"%s\","
         "\"score_int\":%.1f,\"score_float_st\":%.1f,"
         "\"score_float_mt\":%.1f,\"score_mem\":%.1f,"
-        "\"score_overall\":%.1f}",
-        safe_cpu, safe_host, cores, os_name, s_int, s_fst, s_fmt, s_mem, overall);
+        "\"score_overall\":%.1f,"
+        "\"time_int\":%.6f,\"time_float_st\":%.6f,"
+        "\"time_float_mt\":%.6f,\"time_mem\":%.6f}",
+        safe_cpu, safe_host, cores, os_name, s_int, s_fst, s_fmt, s_mem, overall,
+        t_int, t_fst, t_fmt, t_mem);
     fclose(f);
 
     char cmd[1024];
@@ -432,13 +437,15 @@ int main(int argc, char *argv[]) {
 
     /* Ask to submit (auto-submit in silent mode) */
     if (silent) {
-        submit_results(cpu_name, computername, cores, s_int, s_fst, s_fmt, s_mem, overall);
+        submit_results(cpu_name, computername, cores, s_int, s_fst, s_fmt, s_mem, overall,
+                       t_int, t_fst, t_fmt, t_mem);
     } else {
         printf("  Submit results to online leaderboard? [y/N] ");
         fflush(stdout);
         int ch = getchar();
         if (ch == 'y' || ch == 'Y') {
-            submit_results(cpu_name, computername, cores, s_int, s_fst, s_fmt, s_mem, overall);
+            submit_results(cpu_name, computername, cores, s_int, s_fst, s_fmt, s_mem, overall,
+                           t_int, t_fst, t_fmt, t_mem);
         }
         printf("\n");
     }
